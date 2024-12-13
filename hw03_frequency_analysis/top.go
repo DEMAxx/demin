@@ -12,6 +12,7 @@ type wc struct {
 }
 
 func Top10(t string) []string {
+	lastValue := 9
 	s := strings.Fields(t)
 	usedStack := make([]wc, 0)
 	topWords := make([]string, 0)
@@ -19,14 +20,14 @@ func Top10(t string) []string {
 	validWord := regexp.MustCompile(`^[а-яА-Я,.-]+$`)
 
 	for _, v := range s {
-		f := func(find string) (count int, err bool) {
+		f := func(find string) (index int, err bool) {
 			if !validWord.MatchString(find) {
 				return 0, true
 			}
 
-			for index, mv := range usedStack {
+			for i, mv := range usedStack {
 				if find == mv.word {
-					return index, false
+					return i, false
 				}
 			}
 
@@ -49,15 +50,15 @@ func Top10(t string) []string {
 	sort.Slice(usedStack, func(i, j int) bool {
 		if usedStack[i].count == usedStack[j].count {
 			return usedStack[i].word < usedStack[j].word
-		} else {
-			return usedStack[i].count > usedStack[j].count
 		}
+
+		return usedStack[i].count > usedStack[j].count
 	})
 
 	for index, v := range usedStack {
 		topWords = append(topWords, v.word)
 
-		if index == 9 {
+		if index == lastValue {
 			return topWords
 		}
 	}
