@@ -17,7 +17,7 @@ func Top10(t string) []string {
 	usedStack := make([]wc, 0)
 	topWords := make([]string, 0)
 
-	validWord := regexp.MustCompile(`^[а-яА-Я,.-]+$`)
+	validWord := regexp.MustCompile(`^[а-яА-Я-]+$`)
 
 	for _, v := range s {
 		f := func(find string) (index int, err bool) {
@@ -34,11 +34,18 @@ func Top10(t string) []string {
 			return 0, true
 		}
 
-		index, err := f(v)
+		if v == "-" {
+			continue
+		}
+
+		lw := strings.ReplaceAll(strings.ToLower(v), ".", "")
+		lw = strings.ReplaceAll(strings.ToLower(lw), ",", "")
+
+		index, err := f(lw)
 
 		if err {
 			usedStack = append(usedStack, wc{
-				word:  v,
+				word:  lw,
 				count: 1,
 			})
 			continue
@@ -57,6 +64,8 @@ func Top10(t string) []string {
 
 	for index, v := range usedStack {
 		topWords = append(topWords, v.word)
+
+		print(v.word+": ", v.count, "\n")
 
 		if index == lastValue {
 			return topWords
