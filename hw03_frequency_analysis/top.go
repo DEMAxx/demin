@@ -11,13 +11,13 @@ type wc struct {
 	count int
 }
 
+var validWord = regexp.MustCompile(`^[а-яА-Я-]+$`)
+
 func Top10(t string) []string {
-	lastValue := 9
+	const lastValue = 9
 	s := strings.Fields(t)
 	usedStack := make([]wc, 0)
 	topWords := make([]string, 0)
-
-	validWord := regexp.MustCompile(`^[а-яА-Я-]+$`)
 
 	for _, v := range s {
 		f := func(find string) (index int, err bool) {
@@ -39,7 +39,7 @@ func Top10(t string) []string {
 		}
 
 		lw := strings.ReplaceAll(strings.ToLower(v), ".", "")
-		lw = strings.ReplaceAll(strings.ToLower(lw), ",", "")
+		lw = strings.ReplaceAll(lw, ",", "")
 
 		index, err := f(lw)
 
