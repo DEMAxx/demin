@@ -16,6 +16,15 @@ type lruCache struct {
 	items    map[Key]*ListItem
 }
 
+//func (lruCache *lruCache) Set(key Key, value interface  {}){
+//	lruCache.items[key] = &ListItem{
+//		Value: value,
+//		Next:  nil,
+//		Prev:  nil,
+//	}
+//	lruCache.queue.PushBack(lruCache.items[key])
+//}
+
 func NewCache(capacity int) Cache {
 	return &lruCache{
 		capacity: capacity,
