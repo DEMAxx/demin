@@ -30,7 +30,7 @@ func (lruCache *lruCache) Set(key Key, value interface{}) bool {
 
 	item, ok := lruCache.items[key]
 
-	if ok == true {
+	if ok {
 		item.value = value
 		lruCache.queue.MoveToFront(item.item)
 
@@ -40,7 +40,7 @@ func (lruCache *lruCache) Set(key Key, value interface{}) bool {
 	if lruCache.capacity == lruCache.queue.Len() {
 		back := lruCache.queue.Back()
 		valKey, ok := back.Value.(Key)
-		if ok == false {
+		if !ok {
 			panic("Error while deleting cache item")
 		}
 		delete(lruCache.items, valKey)
