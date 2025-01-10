@@ -72,6 +72,9 @@ func (lruCache *lruCache) Get(key Key) (interface{}, bool) {
 }
 
 func (lruCache *lruCache) Clear() {
+	mutex.Lock()
+	defer mutex.Unlock()
+
 	lruCache.queue = new(list)
 	lruCache.items = make(map[Key]*cacheItem, lruCache.capacity)
 }
