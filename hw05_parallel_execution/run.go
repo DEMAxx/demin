@@ -9,61 +9,50 @@ var ErrErrorsLimitExceeded = errors.New("errors limit exceeded")
 
 type Task func() error
 
-var mutex sync.Mutex
-var mutex2 sync.Mutex
-
-// Run starts tasks in n goroutines and stops its work when receiving m errors from tasks.
 func Run(tasks []Task, n, m int) error {
-	//var e error
-	count := len(tasks)
-	//isEnding := false
-	errorCount := 0
-	jobsCount := 0
-	chanJobs := make(chan Task, count)
-	//done := make(chan int)
+	inputCh := make(chan Task)
+	errorCh := make(chan error)
 
-	wg := sync.WaitGroup{}
+	wg := &sync.WaitGroup{}
 
-	defer func() {
-		println("defer")
-		//if e == nil {
-		//	//wg.Wait()
-		//	close(chanJobs)
-		//}
+	go func() {
+		defer close(inputCh)
+
+		for i := range tasks {
+			inputCh <- tasks[i]
+		}
 	}()
 
-	for _, taskJob := range tasks {
-		wg.Add(1)
+	go func() {
+		for i := 0; i < n; i++ {
+			wg.Add(1)
 
-		go func() {
-			defer wg.Done()
-			chanJobs <- taskJob
-		}()
-	}
-
-	wg.Wait()
-
-	for {
-		for task := range chanJobs {
-			println("chanJob", jobsCount)
-
-			if errorCount >= m {
-				return ErrErrorsLimitExceeded
-			}
-
-			jobsCount++
-
-			err := task()
-
-			if err != nil {
-				errorCount++
-			}
-
-			if jobsCount >= count {
-				return nil
-			}
+			go worker(wg, inputCh, errorCh)
 		}
+		wg.Wait()
+		close(errorCh)
+	}()
 
+	j := 0
+
+	for _ = range errorCh {
+		j++
+		if j == m {
+			return ErrErrorsLimitExceeded
+		}
 	}
-	//return nil
+
+	return nil
+}
+
+func worker(wg *sync.WaitGroup, inCh <-chan Task, outCh chan<- error) {
+	defer wg.Done()
+
+	for task := range inCh {
+		err := task()
+
+		if err != nil {
+			outCh <- err
+		}
+	}
 }
