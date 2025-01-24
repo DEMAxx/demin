@@ -48,6 +48,7 @@ func Run(tasks []Task, n, m int) error {
 		if j == m {
 			close(sgnlCh)
 			e = ErrErrorsLimitExceeded
+			wg.Wait()
 			break
 		}
 	}
