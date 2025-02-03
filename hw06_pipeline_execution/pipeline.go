@@ -1,10 +1,5 @@
 package hw06pipelineexecution
 
-import (
-	"errors"
-	"sync"
-)
-
 type (
 	In  = <-chan interface{}
 	Out = In
@@ -14,53 +9,31 @@ type (
 type Stage func(in In) (out Out)
 
 func ExecutePipeline(in In, done In, stages ...Stage) Out {
-	var err error
-
-	if len(stages) == 0 {
-		return in
-	}
-
-	immediatelyStop := make(Bi)
-	defer close(immediatelyStop)
-
-	wg := &sync.WaitGroup{}
-
 	for _, stage := range stages {
-		wg.Add(1)
-		in, err = worker(in, done, stage, wg)
-		if err != nil {
-			println("error")
-			return in
-		}
+		in = worker(done, stage(in))
 	}
-
-	wg.Wait()
 
 	return in
 }
 
-func worker(in In, done In, stage Stage, wg *sync.WaitGroup) (Out, error) {
-	var err error
+func worker(done In, stageWork Out) Out {
 	out := make(Bi)
 
 	go func() {
-		wg.Done()
-
-		stageOut := stage(in)
-
 		defer close(out)
 
-		for i := range stageOut {
+		for {
 			select {
-			case out <- i:
-				println("out <- i")
+			case value, ok := <-stageWork:
+				if !ok {
+					return
+				}
+				out <- value
 			case <-done:
-				err = errors.New("done")
-				println("<-done")
 				return
 			}
 		}
 	}()
 
-	return out, err
+	return out
 }
