@@ -28,7 +28,7 @@ func Run(tasks []Task, n, m int) error {
 			select {
 			case inputCh <- tasks[i]:
 			case <-sgnlCh:
-				break
+				return
 			}
 		}
 	}()
