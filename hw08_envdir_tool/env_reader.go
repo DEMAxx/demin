@@ -12,8 +12,6 @@ import (
 
 var ErrInvalidDir = errors.New("invalid directory")
 
-//var ErrInvalidFile = errors.New("invalid file")
-
 type Environment map[string]EnvValue
 
 // EnvValue helps to distinguish between empty files and files with the first empty line.
@@ -76,11 +74,6 @@ func ReadDir(dir string) (Environment, error) {
 	}
 
 	wg.Wait()
-
-	for key, env := range osEnv {
-		fmt.Println("key", key)
-		fmt.Println("env", env.Value)
-	}
 
 	return osEnv, nil
 }
