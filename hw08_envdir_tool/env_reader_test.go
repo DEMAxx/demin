@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"fmt"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
@@ -18,7 +17,7 @@ func TestReadDir(t *testing.T) {
 	})
 
 	t.Run("no empty values", func(t *testing.T) {
-		dir := "./testdata/env"
+		dir := "./testdata/env2"
 
 		env, err := ReadDir(dir)
 
@@ -27,12 +26,7 @@ func TestReadDir(t *testing.T) {
 		}
 
 		for key, val := range env {
-			fmt.Printf("test %s : %s\n", key, val.Value)
-
+			require.Truef(t, val.Value != "", "error empty value: %v", key)
 		}
-
-		println(env)
-
-		//todo finish test to check is env have empty values
 	})
 }

@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"errors"
 	"fmt"
 	"log"
@@ -55,13 +56,36 @@ func ReadDir(dir string) (Environment, error) {
 			scanner := bufio.NewScanner(osFile)
 
 			for scanner.Scan() {
+
+				if file.Name() == "!FOO" {
+					newScanBytes := make([]byte, len(scanner.Text()))
+
+					for _, vb := range scanner.Bytes() {
+						if vb == 0 {
+							newScanBytes = append(newScanBytes, 32)
+							newScanBytes = append(newScanBytes, 32)
+							newScanBytes = append(newScanBytes, 32)
+						} else {
+							newScanBytes = append(newScanBytes, vb)
+						}
+					}
+
+					println("newScanBytes ", bytes.NewBufferString(string(newScanBytes)).String())
+				}
+
+				nullByte := make([]byte, 1)
+
+				nullByte[0] = 0
+
+				text := string(bytes.Replace([]byte(scanner.Text()), nullByte, []byte("\n"), -1))
+
 				if len(strings.TrimSpace(scanner.Text())) > 0 {
-					envValue.Value = scanner.Text()
 					envValue.NeedRemove = false
 				} else {
-					envValue.Value = ""
 					envValue.NeedRemove = true
 				}
+
+				envValue.Value = text
 
 				osEnv[file.Name()] = envValue
 				return
