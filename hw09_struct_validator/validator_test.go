@@ -2,7 +2,9 @@ package hw09structvalidator
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"github.com/stretchr/testify/require"
 	"testing"
 )
 
@@ -42,19 +44,67 @@ func TestValidate(t *testing.T) {
 		expectedErr error
 	}{
 		{
-			// Place your code here.
+			App{
+				Version: "10440",
+			},
+			errors.New("app error"),
 		},
-		// ...
-		// Place your code here.
+		{
+			Token{
+				[]byte("one"),
+				[]byte("two"),
+				[]byte("three"),
+			},
+			errors.New("token error"),
+		},
 	}
+
+	//var validationErrors ValidationErrors
 
 	for i, tt := range tests {
 		t.Run(fmt.Sprintf("case %d", i), func(t *testing.T) {
 			tt := tt
 			t.Parallel()
 
-			// Place your code here.
-			_ = tt
+			fmt.Printf("test %q", tt.in)
+			//fmt.Printf("test tt %q", tt)
+			err := Validate(tt.in)
+
+			validationErrors := ValidationErrors{
+				{
+					Field: "field",
+					Err:   tt.expectedErr,
+				},
+			}
+
+			if errors.Is(err, validationErrors) {
+				fmt.Println("validation errors")
+			} else {
+				fmt.Println("validation no errors")
+			}
+
+			if err == nil {
+				require.NoError(t, err)
+			} else {
+				errorTest := errors.New("test")
+
+				errors.Is(err, validationErrors)
+				errors.Is(err, errorTest)
+				//errors.As(err, &errorTest)
+
+				//fmt.Println("error", tt.expectedErr.Error())
+				//fmt.Println("validationErrors", validationErrors)
+				//
+				//require.PanicsWithError(t, err.Error(), func() {
+				//	fmt.Println("validationErrors", validationErrors)
+				//})
+
+				//require.Nil(t, err)
+				//require.ErrorIs(t, err, validationErrors, "error %q must be type %q", err)
+				//require.EqualError(t, err, tt.expectedErr.Error())
+			}
+
+			//require.Truef(t, tt.expectedErr == nil && err == nil, "expected err %#v, got %#v", tt.expectedErr, err)
 		})
 	}
 }
