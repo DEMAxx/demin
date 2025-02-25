@@ -44,12 +44,6 @@ func TestValidate(t *testing.T) {
 		expectedErr error
 	}{
 		{
-			App{
-				Version: "10440",
-			},
-			errors.New("app error"),
-		},
-		{
 			Token{
 				[]byte("one"),
 				[]byte("two"),
@@ -57,17 +51,18 @@ func TestValidate(t *testing.T) {
 			},
 			errors.New("token error"),
 		},
+		{
+			App{
+				Version: "10440",
+			},
+			errors.New("app error"),
+		},
 	}
-
-	//var validationErrors ValidationErrors
 
 	for i, tt := range tests {
 		t.Run(fmt.Sprintf("case %d", i), func(t *testing.T) {
 			tt := tt
 			t.Parallel()
-
-			fmt.Printf("test %q", tt.in)
-			//fmt.Printf("test tt %q", tt)
 			err := Validate(tt.in)
 
 			validationErrors := ValidationErrors{
