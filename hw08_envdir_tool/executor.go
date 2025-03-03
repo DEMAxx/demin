@@ -3,114 +3,61 @@ package main
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"strings"
-	"sync"
 )
-
-type MapEnvValue struct {
-	Key   string
-	Value string
-}
 
 // RunCmd runs a command + arguments (cmd) with environment variables from env.
 func RunCmd(cmd []string, env Environment) (returnCode int) {
-	wg := new(sync.WaitGroup)
-
-	envMap := [6]MapEnvValue{
-		{
-			"HELLO",
-			"",
-		},
-		{
-			"BAR",
-			"",
-		},
-		{
-			"FOO",
-			"",
-		},
-		{
-			"UNSET",
-			"",
-		},
-		{
-			"ADDED",
-			"",
-		},
-		{
-			"EMPTY",
-			"",
-		},
+	var err error
+	if len(cmd) == 0 {
+		fmt.Println("Error: no command provided")
+		return 1
 	}
 
-	for key, value := range envMap {
-		wg.Add(1)
+	command := exec.Command(cmd[0], cmd[1:]...)
 
-		go func() {
-			defer wg.Done()
+	command.Env = os.Environ()
 
-			osValue, exists := os.LookupEnv(value.Key)
-
-			envValue, ok := env[value.Key]
-
-			if value.Key == "UNSET" {
-				envMap[key] = MapEnvValue{
-					Key:   value.Key,
-					Value: "",
-				}
-			} else if value.Key == "ADDED" {
-				if exists {
-					envMap[key] = MapEnvValue{
-						Key:   value.Key,
-						Value: osValue,
-					}
-				} else if ok {
-					envMap[key] = MapEnvValue{
-						Key:   value.Key,
-						Value: envValue.Value,
-					}
-				}
-			} else if value.Key == "EMPTY" {
-				envMap[key] = MapEnvValue{
-					Key:   value.Key,
-					Value: "",
-				}
+	for name, value := range env {
+		if value.NeedRemove {
+			command.Env = removeEnv(command.Env, name)
+		} else {
+			cleanValue := strings.ReplaceAll(value.Value, "\x00", "")
+			if strings.Trim(name, " ") == "" {
+				command.Env = append(command.Env, cleanValue)
 			} else {
-				if ok {
-					envMap[key] = MapEnvValue{
-						Key:   value.Key,
-						Value: envValue.Value,
-					}
-				} else {
-					envMap[key] = MapEnvValue{
-						Key:   value.Key,
-						Value: osValue,
-					}
-				}
-
-			}
-		}()
-	}
-
-	wg.Wait()
-
-	for _, value := range envMap {
-		fmt.Printf("%s is (%s)\n", value.Key, value.Value)
-	}
-
-	isFirst := true
-
-	for _, v := range os.Args {
-		if strings.Contains(v, "=") {
-			returnCode++
-			if isFirst {
-				isFirst = false
-				fmt.Printf("arguments are %s", v)
-			} else {
-				fmt.Printf(" %s", v)
+				command.Env = append(command.Env, name+"="+cleanValue)
 			}
 		}
 	}
 
-	return returnCode
+	command.Stdin = os.Stdin
+	command.Stdout = os.Stdout
+	command.Stderr = os.Stderr
+
+	err = command.Start()
+	if err != nil {
+		fmt.Println("Error starting command:", err)
+		return 1
+	}
+
+	err = command.Wait()
+	if err != nil {
+		fmt.Println("Error waiting for command:", err)
+		return 1
+	}
+
+	return command.ProcessState.ExitCode()
+}
+
+func removeEnv(env []string, name string) []string {
+	result := make([]string, 0, len(env))
+	prefix := name + "="
+	for _, e := range env {
+		if len(e) > len(prefix) && e[:len(prefix)] != prefix {
+			result = append(result, e)
+		}
+	}
+	return result
 }

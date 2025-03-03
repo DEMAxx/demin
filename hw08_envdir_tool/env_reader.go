@@ -12,6 +12,7 @@ import (
 )
 
 var ErrInvalidDir = errors.New("invalid directory")
+var ErrEmptyDir = errors.New("empty directory")
 
 type Environment map[string]EnvValue
 
@@ -21,16 +22,23 @@ type EnvValue struct {
 	NeedRemove bool
 }
 
+var mu sync.Mutex
+
 // ReadDir reads a specified directory and returns map of env variables.
 // Variables represented as files where filename is name of variable, file first line is a value.
 func ReadDir(dir string) (Environment, error) {
 	osDir, err := os.ReadDir(dir)
-	wg := &sync.WaitGroup{}
-	osEnv := make(Environment)
 
 	if err != nil {
 		return nil, ErrInvalidDir
 	}
+
+	if len(osDir) == 0 {
+		return nil, ErrEmptyDir
+	}
+
+	wg := sync.WaitGroup{}
+	osEnv := make(Environment)
 
 	for _, file := range osDir {
 		wg.Add(1)
@@ -55,6 +63,15 @@ func ReadDir(dir string) (Environment, error) {
 
 			scanner := bufio.NewScanner(osFile)
 
+			if file.Name() == "UNSET" {
+				envValue.NeedRemove = true
+				envValue.Value = ""
+				mu.Lock()
+				osEnv[file.Name()] = envValue
+				mu.Unlock()
+				return
+			}
+
 			for scanner.Scan() {
 
 				if file.Name() == "!FOO" {
@@ -69,8 +86,6 @@ func ReadDir(dir string) (Environment, error) {
 							newScanBytes = append(newScanBytes, vb)
 						}
 					}
-
-					println("newScanBytes ", bytes.NewBufferString(string(newScanBytes)).String())
 				}
 
 				nullByte := make([]byte, 1)
@@ -87,7 +102,9 @@ func ReadDir(dir string) (Environment, error) {
 
 				envValue.Value = text
 
+				mu.Lock()
 				osEnv[file.Name()] = envValue
+				mu.Unlock()
 				return
 			}
 

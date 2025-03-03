@@ -1,15 +1,25 @@
 package main
 
-func main() {
-	env, err := ReadDir("./testdata/env")
+import (
+	"fmt"
+	"os"
+)
 
-	if err != nil {
-		panic(err)
+func main() {
+	if len(os.Args) < 3 {
+		fmt.Printf("Usage: %s /path/to/env/dir command [args...]\n", os.Args[0])
+		os.Exit(1)
 	}
 
-	cmd := make([]string, len(env))
+	envDir := os.Args[1]
+	command := os.Args[2:]
 
-	runCommand := RunCmd(cmd, env)
+	env, err := ReadDir(envDir)
+	if err != nil {
+		fmt.Printf("Error reading environment directory: %s\n", err)
+		os.Exit(1)
+	}
 
-	println("runCommand", runCommand)
+	code := RunCmd(command, env)
+	os.Exit(code)
 }
