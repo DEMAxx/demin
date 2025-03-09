@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -15,8 +16,13 @@ func RunCmd(cmd []string, env Environment) (returnCode int) {
 		return 1
 	}
 
-	command := exec.Command(cmd[0], cmd[1:]...)
+	safeCmd, err := sanitizeInput(cmd)
+	if err != nil {
+		fmt.Println("Error:", err)
+		return 1
+	}
 
+	command := exec.Command(safeCmd[0], safeCmd[1:]...) //nolint:gosec
 	command.Env = os.Environ()
 
 	for name, value := range env {
@@ -49,6 +55,15 @@ func RunCmd(cmd []string, env Environment) (returnCode int) {
 	}
 
 	return command.ProcessState.ExitCode()
+}
+
+func sanitizeInput(input []string) ([]string, error) {
+	for _, arg := range input {
+		if strings.ContainsAny(arg, `;&|<>`) {
+			return nil, errors.New("invalid input")
+		}
+	}
+	return input, nil
 }
 
 func removeEnv(env []string, name string) []string {
