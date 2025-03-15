@@ -8,10 +8,10 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/fixme_my_friend/hw12_13_14_15_calendar/internal/app"
-	"github.com/fixme_my_friend/hw12_13_14_15_calendar/internal/logger"
-	internalhttp "github.com/fixme_my_friend/hw12_13_14_15_calendar/internal/server/http"
-	memorystorage "github.com/fixme_my_friend/hw12_13_14_15_calendar/internal/storage/memory"
+	"github.com/DEMAxx/demin/hw12_13_14_15_calendar/internal/app"
+	"github.com/DEMAxx/demin/hw12_13_14_15_calendar/internal/logger"
+	internalhttp "github.com/DEMAxx/demin/hw12_13_14_15_calendar/internal/server/http"
+	memorystorage "github.com/DEMAxx/demin/hw12_13_14_15_calendar/internal/storage/memory"
 )
 
 var configFile string
@@ -28,7 +28,7 @@ func main() {
 		return
 	}
 
-	config := NewConfig()
+	config := NewConfig(configFile)
 	logg := logger.New(config.Logger.Level)
 
 	storage := memorystorage.New()
