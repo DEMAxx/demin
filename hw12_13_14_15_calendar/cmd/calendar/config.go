@@ -12,6 +12,7 @@ import (
 type Config struct {
 	Logger LoggerConf
 	Server ServerConf
+	Db     DbConf
 }
 
 type LoggerConf struct {
@@ -21,6 +22,14 @@ type LoggerConf struct {
 type ServerConf struct {
 	Host string
 	Port string
+}
+
+type DbConf struct {
+	User     string
+	Password string
+	Host     string
+	Port     string
+	Name     string
 }
 
 func NewConfig(fileOrDir string) Config {
@@ -49,6 +58,13 @@ func NewConfig(fileOrDir string) Config {
 		Server: ServerConf{
 			Host: env["host"].Value,
 			Port: env["port"].Value,
+		},
+		Db: DbConf{
+			User:     env["user"].Value,
+			Password: env["password"].Value,
+			Host:     env["db_host"].Value,
+			Port:     env["db_port"].Value,
+			Name:     env["name"].Value,
 		},
 	}
 }
