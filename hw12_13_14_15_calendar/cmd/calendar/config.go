@@ -16,7 +16,8 @@ type Config struct {
 }
 
 type LoggerConf struct {
-	Level string
+	Level  string
+	Output string
 }
 
 type ServerConf struct {
@@ -53,7 +54,8 @@ func NewConfig(fileOrDir string) Config {
 
 	return Config{
 		Logger: LoggerConf{
-			Level: env["level"].Value,
+			Level:  env["level"].Value,
+			Output: env["output"].Value,
 		},
 		Server: ServerConf{
 			Host: env["host"].Value,

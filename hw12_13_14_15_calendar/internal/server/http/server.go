@@ -66,5 +66,3 @@ func (s *Server) Stop(ctx context.Context) error {
 
 	return nil
 }
-
-// TODO

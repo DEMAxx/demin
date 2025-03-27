@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"os"
 )
 
 type Level int8
@@ -19,7 +18,16 @@ type LevelWriterAdapter struct {
 }
 
 func (l LevelWriterAdapter) WriteLevel(level Level, p []byte) (n int, err error) {
-	return l.Write(p)
+	switch level {
+	case DebugLevel:
+		return l.Write(append([]byte("debug: "), p...))
+	case InfoLevel:
+		return l.Write(append([]byte("info: "), p...))
+	case ErrorLevel:
+		return l.Write(append([]byte("error: "), p...))
+	default:
+		return l.Write(p)
+	}
 }
 
 type Sampler interface {
@@ -62,8 +70,6 @@ func New(level string) *Logger {
 
 	var logs Logger
 
-	logs = logs.Output(os.Stderr)
-
 	switch level {
 	case "trace":
 		logs.Level(TraceLevel)
@@ -92,11 +98,19 @@ func NewWriter(w io.Writer) Logger {
 }
 
 func (l Logger) Info(msg string) {
-	fmt.Println(msg)
+	_, err := l.w.WriteLevel(InfoLevel, []byte(msg))
+
+	if err != nil {
+		return
+	}
 }
 
 func (l Logger) Error(msg string) {
-	_ = fmt.Errorf("error: %s", msg)
+	_, err := l.w.WriteLevel(ErrorLevel, []byte(fmt.Sprintf("error: %s", msg)))
+
+	if err != nil {
+		return
+	}
 }
 
 func (l Logger) Level(lvl Level) Logger {
@@ -104,15 +118,11 @@ func (l Logger) Level(lvl Level) Logger {
 	return l
 }
 
-func (l Logger) Output(w io.Writer) Logger {
-	l2 := NewWriter(w)
-	l2.level = l.level
-	l2.sampler = l.sampler
-	l2.stack = l.stack
-
-	if l.context != nil {
-		l2.context = make([]byte, len(l.context), cap(l.context))
-		copy(l2.context, l.context)
+func (l *Logger) Output(w io.Writer) *Logger {
+	lw, ok := w.(LevelWriter)
+	if !ok {
+		lw = LevelWriterAdapter{w}
 	}
-	return l2
+	l.w = lw
+	return l
 }

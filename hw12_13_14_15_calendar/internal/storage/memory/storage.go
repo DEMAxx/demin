@@ -1,6 +1,7 @@
 package memorystorage
 
 import (
+	"context"
 	"fmt"
 	"github.com/google/uuid"
 	"sync"
@@ -28,9 +29,15 @@ func New() *Storage {
 	}
 }
 
-func (s *Storage) CreateEvent(event Event) error {
+func (s *Storage) CreateEvent(ctx context.Context, event Event) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
 
 	if _, exists := s.events[event.ID]; exists {
 		return fmt.Errorf("event with ID %s already exists", event.ID)
