@@ -1,122 +1,55 @@
 package main
 
 import (
-	"bufio"
-	"context"
 	"fmt"
 	"github.com/spf13/pflag"
 	"log"
 	"net"
 	"os"
-	"sync"
+	"os/signal"
+	"syscall"
 	"time"
 )
 
-func readRoutine(ctx context.Context, conn net.Conn, wg *sync.WaitGroup) {
-	defer wg.Done()
-	scanner := bufio.NewScanner(conn)
-	defer log.Printf("Finished readRoutine")
-
-OUTER:
-	for {
-		select {
-		case <-ctx.Done():
-			log.Printf("readRoutine is done")
-			return
-		default:
-			if !scanner.Scan() {
-				log.Printf("CANNOT SCAN")
-				break OUTER
-			}
-			text := scanner.Text()
-			log.Printf("From server: %s", text)
-		}
-	}
-}
-
-func writeRoutine(ctx context.Context, conn net.Conn, wg *sync.WaitGroup, stdin chan string) {
-	defer wg.Done()
-	defer log.Printf("Finished writeRoutine")
-
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case str := <-stdin:
-			fmt.Printf("To server %v\n", str)
-
-			conn.Write([]byte(fmt.Sprintf("%s\n", str)))
-		}
-
-	}
-}
-
-func stdinScan() chan string {
-	out := make(chan string)
-	go func() {
-		scanner := bufio.NewScanner(os.Stdin)
-		for scanner.Scan() {
-			out <- scanner.Text()
-		}
-		if scanner.Err() != nil {
-			close(out)
-		}
-	}()
-	return out
-}
-
 func main() {
-	// Place your code here,
-	// P.S. Do not rush to throw context down, think think if it is useful with blocking operation?
-	var err error
 	var intervalFlag time.Duration
 
 	pflag.DurationVarP(&intervalFlag, "timeout", "t", time.Second*10, "timeout of each event")
 
-	pflag.Lookup("timeout").NoOptDefVal = "noconfig.json"
-
 	pflag.Parse()
 
-	dialer := &net.Dialer{}
+	args := pflag.Args()
 
-	ctx, cancel := context.WithTimeout(context.Background(), intervalFlag)
-	defer cancel()
-
-	//ctxNotify, stop := signal.NotifyContext(ctx, syscall.SIGTERM)
-	//defer stop()
-
-	conn, err := dialer.DialContext(ctx, "tcp", net.JoinHostPort("localhost", "4242"))
-
-	if err != nil {
-		log.Fatalf("Can not connect: %v", err)
+	if len(args) != 2 {
+		log.Fatal("Usage: go-telnet [--timeout=10s] host port")
 	}
 
-	defer conn.Close()
+	client := NewTelnetClient(net.JoinHostPort(args[0], args[1]), intervalFlag, os.Stdin, os.Stdout)
 
-	//client := NewTelnetClient(
-	//	net.JoinHostPort("localhost", "4242"),
-	//	intervalFlag,
-	//	conn,
-	//	conn,
-	//)
-	//
-	//_ = client
+	if err := client.Connect(); err != nil {
+		log.Fatal(err)
+	}
 
-	//conn.Write([]byte(fmt.Sprintf("%s\n", "You are connected")))
+	defer client.Close()
 
-	stdin := stdinScan()
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT)
+	errChan := make(chan error, 2)
 
-	wg := &sync.WaitGroup{}
-	wg.Add(1)
 	go func() {
-		readRoutine(ctx, conn, wg)
-		cancel()
+		errChan <- client.Send()
 	}()
 
-	wg.Add(1)
 	go func() {
-		writeRoutine(ctx, conn, wg, stdin)
+		errChan <- client.Receive()
 	}()
 
-	wg.Wait()
+	select {
+	case <-sigChan:
+		fmt.Fprintln(os.Stderr, "\n...Connection was closed by client")
+	case err := <-errChan:
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "...Connection was closed by server")
+		}
+	}
 }

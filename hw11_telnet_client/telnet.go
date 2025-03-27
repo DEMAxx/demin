@@ -1,10 +1,7 @@
 package main
 
 import (
-	"bufio"
-	"fmt"
 	"io"
-	"log"
 	"net"
 	"time"
 )
@@ -16,43 +13,41 @@ type TelnetClient interface {
 	Receive() error
 }
 
+type Telnet struct {
+	address string
+	timeout time.Duration
+	conn    net.Conn
+	in      io.ReadCloser
+	out     io.Writer
+}
+
 func NewTelnetClient(address string, timeout time.Duration, in io.ReadCloser, out io.Writer) TelnetClient {
-	out.Write([]byte(fmt.Sprintf("%s\n", "You are connected")))
-	fmt.Printf("NewTelnetClient: You are connected")
-
-	stdin := stdinScan()
-
-	for {
-		select {
-		case str := <-stdin:
-			log.Println("STDIN", str)
-		case <-time.After(timeout - time.Second):
-			log.Println("got timeout", timeout)
-			in.Close()
-			return nil
-		}
+	return &Telnet{
+		address: address,
+		timeout: timeout,
+		in:      in,
+		out:     out,
 	}
 }
 
-// Place your code here.
-// P.S. Author's solution takes no more than 50 lines.
-func handleConnection(conn net.Conn) {
-	fmt.Fprintf(conn, "Welcome to %s, friend from %s\n", conn.LocalAddr(), conn.RemoteAddr())
+func (t *Telnet) Connect() (err error) {
+	t.conn, err = net.DialTimeout("tcp", t.address, t.timeout)
+	return
+}
 
-	scanner := bufio.NewScanner(conn)
-	for scanner.Scan() {
-		text := scanner.Text()
-		log.Printf("RECEIVED: %s", text)
-		if text == "quit" || text == "exit" {
-			break
-		}
-
-		conn.Write([]byte(fmt.Sprintf("I have received '%s'\n", text)))
+func (t *Telnet) Close() error {
+	if t.conn != nil {
+		return t.conn.Close()
 	}
+	return nil
+}
 
-	if err := scanner.Err(); err != nil {
-		fmt.Printf("Error happend on connection with %s: %v", conn.RemoteAddr(), err)
-	}
+func (t *Telnet) Send() error {
+	_, err := io.Copy(t.conn, t.in)
+	return err
+}
 
-	log.Printf("Closing connection with %s", conn.RemoteAddr())
+func (t *Telnet) Receive() error {
+	_, err := io.Copy(t.out, t.conn)
+	return err
 }
