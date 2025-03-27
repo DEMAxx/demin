@@ -2,13 +2,14 @@ package main
 
 import (
 	"fmt"
-	"github.com/spf13/pflag"
 	"log"
 	"net"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/spf13/pflag" //nolint:depguard
 )
 
 func main() {
