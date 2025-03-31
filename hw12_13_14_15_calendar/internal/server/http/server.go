@@ -3,6 +3,7 @@ package internalhttp
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 )
@@ -27,6 +28,23 @@ type Application interface { // TODO
 
 func NewServer(logger Logger, hostAndPort string, app Application) *Server {
 	mux := http.NewServeMux()
+
+	mux.Handle("/hello", LoggingMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		clientIP := r.RemoteAddr
+		dateTime := time.Now().Format(time.RFC3339)
+		method := r.Method
+		path := r.URL.Path
+		httpVersion := r.Proto
+		userAgent := r.Header.Get("User-Agent")
+
+		logger.Info(fmt.Sprintf("Client IP: %s, DateTime: %s, Method: %s, Path: %s, HTTP Version: %s, User Agent: %s", clientIP, dateTime, method, path, httpVersion, userAgent))
+
+		write, err := w.Write([]byte("Hello, World!"))
+		if err != nil {
+			return
+		}
+		logger.Info(fmt.Sprintf("response: %d", write))
+	}), logger))
 
 	return &Server{
 		httpServer: &http.Server{

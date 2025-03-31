@@ -52,7 +52,7 @@ func main() {
 		calendar,
 	)
 
-	helloHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/hello", func(w http.ResponseWriter, r *http.Request) {
 		clientIP := r.RemoteAddr
 		dateTime := time.Now().Format(time.RFC3339)
 		method := r.Method
@@ -69,15 +69,33 @@ func main() {
 		logg.Info(fmt.Sprintf("response: %d", write))
 	})
 
-	http.Handle("/hello", helloHandler)
-	http.Handle("/test", http.HandlerFunc(
-		func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/test", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet {
 			fmt.Fprintln(w, "test")
-		}))
+		} else {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
+	})
+
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet {
+			fmt.Fprintln(w, "test test")
+		} else {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
+	})
 
 	ctx, cancel := signal.NotifyContext(context.Background(),
 		syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 	defer cancel()
+
+	if err := server.Start(ctx); err != nil {
+		logg.Error("failed to start http server: " + err.Error())
+		cancel()
+		os.Exit(1) //nolint:gocritic
+	}
+
+	logg.Info("calendar is running...")
 
 	go func() {
 		<-ctx.Done()
@@ -89,12 +107,4 @@ func main() {
 			logg.Error("failed to stop http server: " + err.Error())
 		}
 	}()
-
-	logg.Info("calendar is running...")
-
-	if err := server.Start(ctx); err != nil {
-		logg.Error("failed to start http server: " + err.Error())
-		cancel()
-		os.Exit(1) //nolint:gocritic
-	}
 }
