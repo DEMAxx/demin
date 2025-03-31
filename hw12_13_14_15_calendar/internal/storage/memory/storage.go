@@ -3,9 +3,10 @@ package memorystorage
 import (
 	"context"
 	"fmt"
-	"github.com/google/uuid"
 	"sync"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type Event struct {
@@ -19,7 +20,7 @@ type Event struct {
 }
 
 type Storage struct {
-	mu     sync.RWMutex //nolint:unused
+	mu     sync.RWMutex
 	events map[uuid.UUID]Event
 }
 

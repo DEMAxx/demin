@@ -1,4 +1,4 @@
-package env_reader
+package envreader
 
 import (
 	"bufio"
@@ -43,7 +43,6 @@ func ReadDir(dir string) (Environment, error) {
 		wg.Add(1)
 
 		osFile, err := os.Open(fmt.Sprintf("%s/%s", dir, file.Name()))
-
 		if err != nil {
 			fmt.Println("Couldn't open file", err)
 			continue
@@ -65,8 +64,7 @@ func ReadFile(file string) (Environment, error) {
 
 	wg.Add(1)
 
-	osFile, err := os.OpenFile(file, os.O_RDONLY, 0644)
-
+	osFile, err := os.OpenFile(file, os.O_RDONLY, 0o644)
 	if err != nil {
 		return nil, err
 	}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"runtime/debug"
 )
 
 type Level int8
@@ -25,6 +26,10 @@ func (l LevelWriterAdapter) WriteLevel(level Level, p []byte) (n int, err error)
 		return l.Write(append([]byte("info: "), p...))
 	case ErrorLevel:
 		return l.Write(append([]byte("error: "), p...))
+	case WarnLevel:
+		return l.Write(append([]byte("warn: "), p...))
+	case TraceLevel:
+		return l.Write(append([]byte("trace: "), p...))
 	default:
 		return l.Write(p)
 	}
@@ -52,6 +57,8 @@ func (l Level) String() string {
 		return "warn"
 	case ErrorLevel:
 		return "error"
+	case TraceLevel:
+		return "trace"
 	default:
 		return ""
 	}
@@ -66,9 +73,11 @@ type Logger struct {
 	ctx     context.Context
 }
 
-func New(level string) *Logger {
-
+func New(ctx context.Context, level string, sampler Sampler, stack bool) *Logger {
 	var logs Logger
+	logs.ctx = ctx
+	logs.sampler = sampler
+	logs.stack = stack
 
 	switch level {
 	case "trace":
@@ -86,7 +95,7 @@ func New(level string) *Logger {
 	return &logs
 }
 
-func NewWriter(w io.Writer) Logger {
+func NewWriter(ctx context.Context, w io.Writer, sampler Sampler, stack bool) Logger {
 	if w == nil {
 		w = io.Discard
 	}
@@ -94,20 +103,31 @@ func NewWriter(w io.Writer) Logger {
 	if !ok {
 		lw = LevelWriterAdapter{w}
 	}
-	return Logger{w: lw, level: TraceLevel}
+	return Logger{w: lw, level: TraceLevel, ctx: ctx, sampler: sampler, stack: stack}
 }
 
 func (l Logger) Info(msg string) {
-	_, err := l.w.WriteLevel(InfoLevel, []byte(msg))
-
+	if l.sampler != nil && !l.sampler.Sample(InfoLevel) {
+		return
+	}
+	_, err := l.w.WriteLevel(InfoLevel, append(l.context, []byte(msg)...))
 	if err != nil {
 		return
 	}
 }
 
 func (l Logger) Error(msg string) {
-	_, err := l.w.WriteLevel(ErrorLevel, []byte(fmt.Sprintf("error: %s", msg)))
+	if l.sampler != nil && !l.sampler.Sample(ErrorLevel) {
+		return
+	}
 
+	var message []byte
+
+	message = append(message, []byte(fmt.Sprintf("error: %s", msg))...)
+	if l.stack {
+		message = append(message, []byte("\n"+string(debug.Stack()))...)
+	}
+	_, err := l.w.WriteLevel(ErrorLevel, message)
 	if err != nil {
 		return
 	}

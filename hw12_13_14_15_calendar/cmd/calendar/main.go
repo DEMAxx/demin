@@ -3,9 +3,7 @@ package main
 import (
 	"context"
 	"flag"
-	"fmt"
 	"net"
-	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -32,7 +30,10 @@ func main() {
 	}
 
 	config := NewConfig(configFile)
-	logg := logger.New(config.Logger.Level)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	logg := logger.New(ctx, config.Logger.Level, nil, true)
 
 	switch config.Logger.Output {
 	case "stderr":
@@ -52,40 +53,7 @@ func main() {
 		calendar,
 	)
 
-	http.HandleFunc("/hello", func(w http.ResponseWriter, r *http.Request) {
-		clientIP := r.RemoteAddr
-		dateTime := time.Now().Format(time.RFC3339)
-		method := r.Method
-		path := r.URL.Path
-		httpVersion := r.Proto
-		userAgent := r.Header.Get("User-Agent")
-
-		logg.Info(fmt.Sprintf("Client IP: %s, DateTime: %s, Method: %s, Path: %s, HTTP Version: %s, User Agent: %s", clientIP, dateTime, method, path, httpVersion, userAgent))
-
-		write, err := w.Write([]byte("Hello, World!"))
-		if err != nil {
-			return
-		}
-		logg.Info(fmt.Sprintf("response: %d", write))
-	})
-
-	http.HandleFunc("/test", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodGet {
-			fmt.Fprintln(w, "test")
-		} else {
-			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		}
-	})
-
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodGet {
-			fmt.Fprintln(w, "test test")
-		} else {
-			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		}
-	})
-
-	ctx, cancel := signal.NotifyContext(context.Background(),
+	ctx, cancel = signal.NotifyContext(ctx,
 		syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 	defer cancel()
 

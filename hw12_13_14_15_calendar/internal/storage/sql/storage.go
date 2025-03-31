@@ -43,17 +43,28 @@ func (s *Storage) Connect(ctx context.Context) error {
 	return nil
 }
 
-func (s *Storage) GetDb() *sql.DB {
+func (s *Storage) GetDB() *sql.DB {
 	return s.db
 }
 
-func (s *Storage) Close(ctx context.Context) error {
+func (s *Storage) Close() error {
 	return s.db.Close()
 }
 
 func (s *Storage) CreateEvent(ctx context.Context, event Event) error {
-	query := `INSERT INTO events (id, title, date, duration, description, user_id, notify) VALUES ($1, $2, $3, $4, $5, $6, $7)`
-	_, err := s.db.ExecContext(ctx, query, event.ID, event.Title, event.Date, event.Duration, event.Description, event.User, event.Notify)
+	query := `INSERT INTO events (id, title, date, duration, description, user_id, notify) 
+VALUES ($1, $2, $3, $4, $5, $6, $7)`
+	_, err := s.db.ExecContext(
+		ctx,
+		query,
+		event.ID,
+		event.Title,
+		event.Date,
+		event.Duration,
+		event.Description,
+		event.User,
+		event.Notify,
+	)
 	if err != nil {
 		return fmt.Errorf("failed to create event: %w", err)
 	}
@@ -85,8 +96,20 @@ func (s *Storage) DeleteEvent(ctx context.Context, id string) error {
 }
 
 func (s *Storage) UpdateEvent(ctx context.Context, event Event) error {
-	query := `UPDATE events SET title = $2, date = $3, duration = $4, description = $5, user_id = $6, notify = $7 WHERE id = $1`
-	_, err := s.db.ExecContext(ctx, query, event.ID, event.Title, event.Date, event.Duration, event.Description, event.User, event.Notify)
+	query := `UPDATE events SET 
+                  title = $2, date = $3, duration = $4, description = $5, user_id = $6, notify = $7 
+              WHERE id = $1`
+	_, err := s.db.ExecContext(
+		ctx,
+		query,
+		event.ID,
+		event.Title,
+		event.Date,
+		event.Duration,
+		event.Description,
+		event.User,
+		event.Notify,
+	)
 	if err != nil {
 		return fmt.Errorf("failed to update event: %w", err)
 	}

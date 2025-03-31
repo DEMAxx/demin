@@ -3,9 +3,10 @@ package app
 import (
 	"context"
 	"fmt"
+	"time"
+
 	memorystorage "github.com/DEMAxx/demin/hw12_13_14_15_calendar/internal/storage/memory"
 	"github.com/google/uuid"
-	"time"
 )
 
 type App struct {
@@ -29,7 +30,14 @@ func New(logger Logger, storage Storage) *App {
 	}
 }
 
-func (a *App) CreateEvent(ctx context.Context, id uuid.UUID, title string, date time.Time, description string, user uuid.UUID) error {
+func (a *App) CreateEvent(
+	ctx context.Context,
+	id uuid.UUID,
+	title string,
+	date time.Time,
+	description string,
+	user uuid.UUID,
+) error {
 	event := memorystorage.Event{
 		ID:          id,
 		Title:       title,

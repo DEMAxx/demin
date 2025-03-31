@@ -37,7 +37,12 @@ func NewServer(logger Logger, hostAndPort string, app Application) *Server {
 		httpVersion := r.Proto
 		userAgent := r.Header.Get("User-Agent")
 
-		logger.Info(fmt.Sprintf("Client IP: %s, DateTime: %s, Method: %s, Path: %s, HTTP Version: %s, User Agent: %s", clientIP, dateTime, method, path, httpVersion, userAgent))
+		logger.Info(
+			fmt.Sprintf(
+				"Client IP: %s, DateTime: %s, Method: %s, Path: %s, HTTP Version: %s, User Agent: %s",
+				clientIP, dateTime, method, path, httpVersion, userAgent,
+			),
+		)
 
 		write, err := w.Write([]byte("Hello, World!"))
 		if err != nil {
@@ -48,8 +53,9 @@ func NewServer(logger Logger, hostAndPort string, app Application) *Server {
 
 	return &Server{
 		httpServer: &http.Server{
-			Addr:    hostAndPort,
-			Handler: mux,
+			Addr:              hostAndPort,
+			Handler:           mux,
+			ReadHeaderTimeout: 5 * time.Second,
 		},
 		logger: logger,
 		app:    app,

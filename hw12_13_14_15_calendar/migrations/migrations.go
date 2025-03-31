@@ -4,6 +4,7 @@ import (
 	"context"
 	"embed"
 	"fmt"
+
 	"github.com/DEMAxx/demin/hw12_13_14_15_calendar/internal/storage/sql"
 	"github.com/pressly/goose/v3"
 )
@@ -39,12 +40,12 @@ func Run(cnf *Config) error {
 		return err
 	}
 
-	defer func(st *sqlstorage.Storage, ctx context.Context) {
-		err := st.Close(ctx)
+	defer func(st *sqlstorage.Storage) {
+		err := st.Close()
 		if err != nil {
 			panic(err)
 		}
-	}(st, ctx)
+	}(st)
 
-	return goose.Up(st.GetDb(), "sources")
+	return goose.Up(st.GetDB(), "sources")
 }

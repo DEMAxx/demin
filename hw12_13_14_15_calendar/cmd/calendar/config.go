@@ -1,9 +1,10 @@
 package main
 
 import (
-	"github.com/DEMAxx/demin/hw12_13_14_15_calendar/internal/env_reader" // Import the env_reader package
 	"log"
 	"os"
+
+	"github.com/DEMAxx/demin/hw12_13_14_15_calendar/internal/envreader"
 )
 
 // При желании конфигурацию можно вынести в internal/config.
@@ -12,7 +13,7 @@ import (
 type Config struct {
 	Logger LoggerConf
 	Server ServerConf
-	Db     DbConf
+	DB     DBConf
 }
 
 type LoggerConf struct {
@@ -25,7 +26,7 @@ type ServerConf struct {
 	Port string
 }
 
-type DbConf struct {
+type DBConf struct {
 	User     string
 	Password string
 	Host     string
@@ -39,17 +40,20 @@ func NewConfig(fileOrDir string) Config {
 	}
 
 	fileInfo, err := os.Stat(fileOrDir)
-
 	if err != nil {
 		log.Fatalf("Error stating file or directory: %v", err)
 	}
 
-	var env env_reader.Environment
+	var env envreader.Environment
 
 	if fileInfo.IsDir() {
-		env, err = env_reader.ReadDir(fileOrDir)
+		env, err = envreader.ReadDir(fileOrDir)
 	} else {
-		env, err = env_reader.ReadFile(fileOrDir)
+		env, err = envreader.ReadFile(fileOrDir)
+	}
+
+	if err != nil {
+		log.Fatalf("Error reading environment: %v", err)
 	}
 
 	return Config{
@@ -61,7 +65,7 @@ func NewConfig(fileOrDir string) Config {
 			Host: env["host"].Value,
 			Port: env["port"].Value,
 		},
-		Db: DbConf{
+		DB: DBConf{
 			User:     env["user"].Value,
 			Password: env["password"].Value,
 			Host:     env["db_host"].Value,

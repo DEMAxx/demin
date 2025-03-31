@@ -15,7 +15,12 @@ func LoggingMiddleware(next http.Handler, logg Logger) http.Handler {
 		httpVersion := r.Proto
 		userAgent := r.Header.Get("User-Agent")
 
-		logg.Info(fmt.Sprintf("Client IP: %s, DateTime: %s, Method: %s, Path: %s, HTTP Version: %s, User Agent: %s", clientIP, dateTime, method, path, httpVersion, userAgent))
+		logg.Info(
+			fmt.Sprintf(
+				"Client IP: %s, DateTime: %s, Method: %s, Path: %s, HTTP Version: %s, User Agent: %s",
+				clientIP, dateTime, method, path, httpVersion, userAgent,
+			),
+		)
 
 		next.ServeHTTP(w, r)
 	})

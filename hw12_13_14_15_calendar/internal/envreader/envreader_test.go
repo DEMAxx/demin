@@ -1,4 +1,4 @@
-package env_reader
+package envreader
 
 import (
 	"errors"
