@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -47,18 +48,9 @@ func main() {
 
 	server := internalhttp.NewServer(
 		logg,
-		fmt.Sprintf("%s:%s", config.Server.Host, config.Server.Port),
+		net.JoinHostPort(config.Server.Host, config.Server.Port),
 		calendar,
 	)
-
-	latencyMiddleware := func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			startTime := time.Now()
-			next.ServeHTTP(w, r)
-			latency := time.Since(startTime)
-			logg.Info(fmt.Sprintf("Latency: %s", latency))
-		})
-	}
 
 	helloHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		clientIP := r.RemoteAddr
@@ -77,7 +69,11 @@ func main() {
 		logg.Info(fmt.Sprintf("response: %d", write))
 	})
 
-	http.Handle("/hello", latencyMiddleware(helloHandler))
+	http.Handle("/hello", helloHandler)
+	http.Handle("/test", http.HandlerFunc(
+		func(w http.ResponseWriter, r *http.Request) {
+			fmt.Fprintln(w, "test")
+		}))
 
 	ctx, cancel := signal.NotifyContext(context.Background(),
 		syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)

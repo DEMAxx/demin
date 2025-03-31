@@ -1,7 +1,7 @@
 [logger]
-level = "INFO"
+level = INFO
 
 [server]
-port = 8080
-host = "localhost"
+port = 4242
+host = localhost
 
