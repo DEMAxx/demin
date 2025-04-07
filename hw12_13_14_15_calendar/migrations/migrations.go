@@ -13,7 +13,7 @@ type Config struct {
 	User     string
 	Password string
 	Host     string
-	Port     int
+	Port     string
 	Name     string
 }
 
@@ -27,7 +27,7 @@ func Run(cnf *Config) error {
 
 	goose.SetBaseFS(embedMigrations)
 
-	dsn := fmt.Sprintf("user=%s password=%s host=%s port=%d dbname=%s sslmode=disable",
+	dsn := fmt.Sprintf("user=%s password=%s host=%s port=%s dbname=%s sslmode=disable",
 		cnf.User, cnf.Password, cnf.Host, cnf.Port, cnf.Name)
 
 	st, err := sqlstorage.New(dsn)

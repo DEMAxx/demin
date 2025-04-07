@@ -5,3 +5,9 @@ level = INFO
 port = 4242
 host = localhost
 
+[database]
+user = calendar
+password = calendar
+db_host = localhost
+db_port = 5432
+name = calendar

@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/DEMAxx/demin/hw12_13_14_15_calendar/internal/app"
+	"github.com/DEMAxx/demin/hw12_13_14_15_calendar/internal/config"
 	"github.com/DEMAxx/demin/hw12_13_14_15_calendar/internal/logger"
 	internalhttp "github.com/DEMAxx/demin/hw12_13_14_15_calendar/internal/server/http"
 	memorystorage "github.com/DEMAxx/demin/hw12_13_14_15_calendar/internal/storage/memory"
@@ -29,13 +30,13 @@ func main() {
 		return
 	}
 
-	config := NewConfig(configFile)
+	conf := config.NewConfig(configFile)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	logg := logger.New(ctx, config.Logger.Level, nil, true)
+	logg := logger.New(ctx, conf.Logger.Level, nil, true)
 
-	switch config.Logger.Output {
+	switch conf.Logger.Output {
 	case "stderr":
 		logg = logg.Output(os.Stderr)
 	case "stdout":
@@ -49,7 +50,7 @@ func main() {
 
 	server := internalhttp.NewServer(
 		logg,
-		net.JoinHostPort(config.Server.Host, config.Server.Port),
+		net.JoinHostPort(conf.Server.Host, conf.Server.Port),
 		calendar,
 	)
 
