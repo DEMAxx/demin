@@ -19,6 +19,11 @@ type Event struct {
 	Notify      time.Time
 }
 
+type User struct {
+	ID   uuid.UUID
+	Name string
+}
+
 type Storage struct {
 	mu     sync.RWMutex
 	events map[uuid.UUID]Event

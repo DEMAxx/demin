@@ -2,12 +2,17 @@ package hw02unpackstring
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
 
 func TestUnpack(t *testing.T) {
+	for _, v := range map[int]int{0: 0, 1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6, 7: 7, 8: 8, 9: 9} {
+		fmt.Println(v)
+	}
+
 	tests := []struct {
 		input    string
 		expected string

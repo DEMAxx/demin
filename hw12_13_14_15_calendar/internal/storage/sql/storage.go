@@ -71,7 +71,7 @@ VALUES ($1, $2, $3, $4, $5, $6, $7)`
 	return nil
 }
 
-func (s *Storage) GetEvent(ctx context.Context, id string) (Event, error) {
+func (s *Storage) GetEvent(ctx context.Context, id uuid.UUID) (Event, error) {
 	query := `SELECT id, title, date, duration, description, user_id, notify FROM events WHERE id = $1`
 	row := s.db.QueryRowContext(ctx, query, id)
 
@@ -86,7 +86,7 @@ func (s *Storage) GetEvent(ctx context.Context, id string) (Event, error) {
 	return event, nil
 }
 
-func (s *Storage) DeleteEvent(ctx context.Context, id string) error {
+func (s *Storage) DeleteEvent(ctx context.Context, id uuid.UUID) error {
 	query := `DELETE FROM events WHERE id = $1`
 	_, err := s.db.ExecContext(ctx, query, id)
 	if err != nil {

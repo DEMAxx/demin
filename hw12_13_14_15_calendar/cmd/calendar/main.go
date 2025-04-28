@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"net"
 	"os"
 	"os/signal"
@@ -14,6 +15,7 @@ import (
 	"github.com/DEMAxx/demin/hw12_13_14_15_calendar/internal/logger"
 	internalhttp "github.com/DEMAxx/demin/hw12_13_14_15_calendar/internal/server/http"
 	memorystorage "github.com/DEMAxx/demin/hw12_13_14_15_calendar/internal/storage/memory"
+	dbst "github.com/DEMAxx/demin/hw12_13_14_15_calendar/internal/storage/sql"
 )
 
 var configFile string
@@ -45,12 +47,29 @@ func main() {
 		logg = logg.Output(os.Stdout) // Default to stdout if not specified
 	}
 
+	dbStorage, err := dbst.New(
+		fmt.Sprintf(
+			"user=%s password=%s host=%s port=%s dbname=%s sslmode=disable",
+			conf.DB.User,
+			conf.DB.Password,
+			conf.DB.Host,
+			conf.DB.Port,
+			conf.DB.Name,
+		),
+	)
+
+	if err != nil {
+		logg.Error("failed to create database storage: " + err.Error())
+		os.Exit(1)
+	}
+
 	storage := memorystorage.New()
-	calendar := app.New(logg, storage)
+	calendar := app.New(logg, storage, dbStorage)
 
 	server := internalhttp.NewServer(
 		logg,
 		net.JoinHostPort(conf.Server.Host, conf.Server.Port),
+		net.JoinHostPort(conf.Server.Host, conf.Server.GrpcPort),
 		calendar,
 	)
 

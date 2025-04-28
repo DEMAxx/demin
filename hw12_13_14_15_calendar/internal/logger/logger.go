@@ -23,7 +23,7 @@ func (l LevelWriterAdapter) WriteLevel(level Level, p []byte) (n int, err error)
 	case DebugLevel:
 		return l.Write(append([]byte("debug: "), p...))
 	case InfoLevel:
-		return l.Write(append([]byte("info: "), p...))
+		return l.Write(append([]byte("\n info: "), p...))
 	case ErrorLevel:
 		return l.Write(append([]byte("error: "), p...))
 	case WarnLevel:

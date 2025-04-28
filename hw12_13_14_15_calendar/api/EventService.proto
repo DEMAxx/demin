@@ -1,7 +1,70 @@
 syntax = "proto3";
 
-package event;
+package events;
+option go_package = "./;pb";
 
-message Event {
-    // TODO
+import "google/protobuf/duration.proto";
+
+service Events {
+  rpc EventCreate (EventCreateRequest) returns (EventCreateResponse) {}
+  rpc EventUpdate (EventUpdateRequest) returns (EventUpdateResponse) {}
+  rpc EventRemove (EventRemoveRequest) returns (EventRemoveResponse) {}
+  rpc EventWeekList (EventWeekListRequest) returns (EventWeekListResponse) {}
+  rpc EventMonthList (EventMonthListRequest) returns (EventMonthListResponse) {}
+}
+
+message EventCreateRequest {
+  message Event {
+    string title = 1;
+    string date = 2; // ISO 8601 format (e.g., "2023-10-01")
+    google.protobuf.Duration duration = 3;
+    string description = 4;
+    string user = 5;
+    int32 notification = 6; // in hours
+  }
+
+  Event event = 1;
+}
+
+message EventCreateResponse {
+  string id = 1;
+}
+
+message EventUpdateRequest {
+  string id = 1; // ID of the event to update
+  string title = 2;
+  string date = 3; // ISO 8601 format
+  google.protobuf.Duration duration = 4;
+  string description = 5;
+  int32 notification = 6; // in hours
+}
+
+message EventUpdateResponse {
+  string id = 1;
+}
+
+message EventRemoveRequest {
+  string id = 1; // ID of the event to remove
+}
+
+message EventRemoveResponse {
+  string id = 1;
+}
+
+message EventWeekListRequest {
+  string user = 1; // User ID to filter events
+  string start_date = 2; // Start date of the week in ISO 8601 format
+}
+
+message EventWeekListResponse {
+  repeated EventCreateRequest.Event events = 1; // List of events
+}
+
+message EventMonthListRequest {
+  string user = 1; // User ID to filter events
+  string start_date = 2; // Start date of the month in ISO 8601 format
+}
+
+message EventMonthListResponse {
+  repeated EventCreateRequest.Event events = 1; // List of events
 }

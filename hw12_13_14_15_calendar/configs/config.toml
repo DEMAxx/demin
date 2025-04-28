@@ -4,6 +4,7 @@ level = INFO
 [server]
 port = 4242
 host = localhost
+grpc_port = 4243
 
 [database]
 user = calendar

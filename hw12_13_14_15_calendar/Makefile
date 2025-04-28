@@ -38,4 +38,13 @@ migrate: build-migrate
 build-migrate:
 	go build -v -o $(MIGRATE_BIN) ./cmd/migrate
 
+generate:
+	rm -rf events/pb
+	mkdir -p events/pb
+
+	protoc \
+		--go_out=events/pb \
+		--go-grpc_out=events/pb \
+		api/*.proto
+
 .PHONY: build run build-img run-img version test lint

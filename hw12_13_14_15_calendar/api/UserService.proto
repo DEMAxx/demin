@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+package users;
+option go_package = "./;pb";
+
+import "google/protobuf/duration.proto";
+
+service Users {
+  rpc UserCreate (UserCreateRequest) returns (UserCreateResponse) {}
+  rpc UserUpdate (UserUpdateRequest) returns (UserUpdateResponse) {}
+  rpc UserRemove (UserRemoveRequest) returns (UserRemoveResponse) {}
+}
+
+message UserCreateRequest {
+  message User {
+    string name = 1;
+  }
+
+  User user = 1;
+}
+
+message UserCreateResponse {
+  string id = 1;
+}
+
+message UserUpdateRequest {
+  string id = 1;
+  string name = 2;
+}
+
+message UserUpdateResponse {
+  string id = 1;
+}
+
+message UserRemoveRequest {
+  string id = 1;
+}
+
+message UserRemoveResponse {
+  string id = 1;
+}

@@ -22,8 +22,9 @@ type LoggerConf struct {
 }
 
 type ServerConf struct {
-	Host string
-	Port string
+	Host     string
+	Port     string
+	GrpcPort string
 }
 
 type DBConf struct {
@@ -62,8 +63,9 @@ func NewConfig(fileOrDir string) Config {
 			Output: env["output"].Value,
 		},
 		Server: ServerConf{
-			Host: env["host"].Value,
-			Port: env["port"].Value,
+			Host:     env["host"].Value,
+			Port:     env["port"].Value,
+			GrpcPort: env["grpc_port"].Value,
 		},
 		DB: DBConf{
 			User:     env["user"].Value,

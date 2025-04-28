@@ -6,12 +6,14 @@ import (
 	"time"
 
 	memorystorage "github.com/DEMAxx/demin/hw12_13_14_15_calendar/internal/storage/memory"
+	databasestorage "github.com/DEMAxx/demin/hw12_13_14_15_calendar/internal/storage/sql"
 	"github.com/google/uuid"
 )
 
 type App struct {
-	logger  Logger
-	storage Storage
+	logger    Logger
+	storage   Storage
+	dbStorage DBStorage
 }
 
 type Logger interface {
@@ -20,14 +22,40 @@ type Logger interface {
 }
 
 type Storage interface {
-	CreateEvent(ctx context.Context, event memorystorage.Event) error
+	CreateEvent(ctx context.Context, event memorystorage.Event) (uuid.UUID, error)
+	CreateUser(ctx context.Context, user memorystorage.User) (uuid.UUID, error)
 }
 
-func New(logger Logger, storage Storage) *App {
+type DBStorage interface {
+	CreateEvent(ctx context.Context, event databasestorage.Event) error
+	GetEvent(ctx context.Context, id uuid.UUID) (databasestorage.Event, error)
+	DeleteEvent(ctx context.Context, id uuid.UUID) error
+	UpdateEvent(ctx context.Context, event databasestorage.Event) error
+}
+
+func New(logger Logger, storage Storage, dbStorage DBStorage) *App {
 	return &App{
-		logger:  logger,
-		storage: storage,
+		logger:    logger,
+		storage:   storage,
+		dbStorage: dbStorage,
 	}
+}
+
+func (a *App) CreateUser(
+	ctx context.Context,
+	name string,
+) (uuid.UUID, error) {
+	user := memorystorage.User{
+		Name: name,
+	}
+	if uid, err := a.storage.CreateUser(ctx, user); err != nil {
+		a.logger.Error("failed to create user: " + err.Error())
+		return uuid.Nil, err
+	} else {
+		a.logger.Info(fmt.Sprintf("user created: %s", uid))
+		return uid, nil
+	}
+
 }
 
 func (a *App) CreateEvent(
@@ -37,7 +65,7 @@ func (a *App) CreateEvent(
 	date time.Time,
 	description string,
 	user uuid.UUID,
-) error {
+) (uuid.UUID, error) {
 	event := memorystorage.Event{
 		ID:          id,
 		Title:       title,
@@ -47,10 +75,11 @@ func (a *App) CreateEvent(
 		User:        user,
 		Notify:      date.Add(-time.Hour),
 	}
-	if err := a.storage.CreateEvent(ctx, event); err != nil {
+	if uid, err := a.storage.CreateEvent(ctx, event); err != nil {
 		a.logger.Error("failed to create event: " + err.Error())
-		return err
+		return uuid.Nil, err
+	} else {
+		a.logger.Info(fmt.Sprintf("event created: %q", id))
+		return uid, nil
 	}
-	a.logger.Info(fmt.Sprintf("event created: %q", id))
-	return nil
 }
